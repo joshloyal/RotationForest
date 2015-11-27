@@ -6,6 +6,9 @@ from sklearn.cross_validation import train_test_split
 from sklearn.metrics import log_loss
 from sklearn.metrics import classification_report
 
+from sklearn.pipeline import make_pipeline
+from sklearn.decomposition import PCA
+
 def classification_data():
     n_features = 30
     n_redundant = int(0.1 * n_features)
@@ -26,9 +29,18 @@ clf.fit(xt, yt)
 yhat = clf.predict(xv)
 print np.mean(yhat == yv), log_loss(yv, yhat)
 print classification_report(yv, yhat)
+print ""
 
-clf = RotationForestClassifier(random_state=12, n_estimators=25, n_subsets=10, max_features=X.shape[1])
+clf = make_pipeline(PCA(), RandomForestClassifier(random_state=12, n_estimators=25))
+clf.fit(xt, yt)
+yhat = clf.predict(xv)
+print np.mean(yhat == yv), log_loss(yv, yhat)
+print classification_report(yv, yhat)
+print ""
+
+clf = RotationForestClassifier(random_state=12, n_estimators=25, n_features_per_subset=3, max_features=X.shape[1])
 clf.fit(xt,yt)
 yhat = clf.predict(xv)
 print np.mean(yhat == yv), log_loss(yv, yhat)
 print classification_report(yv, yhat)
+print ""

@@ -1,31 +1,3 @@
-"""Forest of trees-based ensemble methods
-
-Those methods include random forests and extremely randomized trees.
-
-The module structure is the following:
-
-- The ``BaseForest`` base class implements a common ``fit`` method for all
-  the estimators in the module. The ``fit`` method of the base ``Forest``
-  class calls the ``fit`` method of each sub-estimator on random samples
-  (with replacement, a.k.a. bootstrap) of the training set.
-
-  The init of the sub-estimator is further delegated to the
-  ``BaseEnsemble`` constructor.
-
-- The ``ForestClassifier`` and ``ForestRegressor`` base classes further
-  implement the prediction logic by computing an average of the predicted
-  outcomes of the sub-estimators.
-
-- The ``RandomForestClassifier`` and ``RandomForestRegressor`` derived
-  classes provide the user with concrete implementations of
-  the forest ensemble method using classical, deterministic
-  ``DecisionTreeClassifier`` and ``DecisionTreeRegressor`` as
-  sub-estimator implementations.
-
-Single and multi-output problems are both handled.
-
-"""
-
 # Author: Joshua Loyal <jloyal25@gmail.com>
 #
 # License: BSD 3 clause
@@ -84,7 +56,7 @@ def _generate_unsampled_indices(random_state, n_samples):
     return unsampled_indices
 
 
-def _parallel_build_trees(tree, rotation_matrix, forest, X, y, sample_weight, tree_idx, n_trees,
+def _parallel_build_trees(tree, forest, X, y, sample_weight, tree_idx, n_trees,
                           verbose=0, class_weight=None):
     """Private function used to fit a single tree in parallel."""
     if verbose > 1:
@@ -108,31 +80,31 @@ def _parallel_build_trees(tree, rotation_matrix, forest, X, y, sample_weight, tr
         elif class_weight == 'balanced_subsample':
             curr_sample_weight *= compute_sample_weight('balanced', y, indices)
 
-        proj_x = fast_dot(X, rotation_matrix)
+        proj_x = forest.project(X, tree_idx)
         tree.fit(proj_x, y, sample_weight=curr_sample_weight, check_input=False)
     else:
-        proj_x = fast_dot(X, rotation_matrix)
+        proj_x = forest.project(X, tree_idx)
         tree.fit(proj_x, y, sample_weight=sample_weight, check_input=False)
 
     return tree
 
 
-def random_feature_subsets(array, k, random_state=1234):
+def random_feature_subsets(array, batch_size, random_state=1234):
+    """ Generate K subsets of the features in X """
     np.random.seed(random_state)
     features = range(array.shape[1])
     np.random.shuffle(features)
-    batch_size = int(len(features)/k)
     for batch in gen_batches(len(features), batch_size):
         yield features[batch]
 
 
-
-def _parallel_build_rotation_matrices(forest, X):
+def _parallel_build_rotation_matrices(forest, X, tree, tree_idx):
     n_samples, n_features = X.shape
     rotation_matrix = np.zeros((n_features, n_features), dtype=np.float32)
 
-    x_sample = resample(X, n_samples=int(n_samples*.75))
-    for subset in random_feature_subsets(X, forest.n_subsets):
+    # use a 75% a bootstrap when fitting the rotation matrices
+    x_sample = resample(X, n_samples=int(n_samples*.75), random_state=tree.random_state)
+    for subset in random_feature_subsets(X, forest.n_features_per_subset):
         pca = PCA()
         pca.fit(x_sample[:, subset])
         rotation_matrix[np.ix_(subset, subset)] = pca.components_
@@ -157,7 +129,7 @@ class BaseRotationForest(six.with_metaclass(ABCMeta, BaseEnsemble,
     def __init__(self,
                  base_estimator,
                  n_estimators=10,
-                 n_subsets=5,
+                 n_features_per_subset=3,
                  estimator_params=tuple(),
                  bootstrap=False,
                  oob_score=False,
@@ -171,7 +143,7 @@ class BaseRotationForest(six.with_metaclass(ABCMeta, BaseEnsemble,
             n_estimators=n_estimators,
             estimator_params=estimator_params)
 
-        self.n_subsets = n_subsets
+        self.n_features_per_subset = n_features_per_subset
         self.bootstrap = bootstrap
         self.oob_score = oob_score
         self.n_jobs = n_jobs
@@ -340,11 +312,14 @@ class BaseRotationForest(six.with_metaclass(ABCMeta, BaseEnsemble,
                 tree.set_params(random_state=random_state.randint(MAX_INT))
                 trees.append(tree)
 
+            # rotation matrices are built seperatly from the trees. This is done
+            # so that we can take full advantage of the threading backend for tree building
+            self.n_features_per_subset = max(1, min(self.n_features_per_subset, X.shape[1]))
             rotation_matrices = Parallel(n_jobs=self.n_jobs,
                                          verbose=self.verbose,
                                          backend="multiprocessing")(
-                delayed(_parallel_build_rotation_matrices)(self, X)
-                for _ in trees)
+                delayed(_parallel_build_rotation_matrices)(self, X, t, i)
+                for i, t in enumerate(trees))
             self.rotation_matrices_.extend(rotation_matrices)
 
             # Parallel loop: we use the threading backend as the Cython code
@@ -354,7 +329,7 @@ class BaseRotationForest(six.with_metaclass(ABCMeta, BaseEnsemble,
             trees = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
                              backend="threading")(
                 delayed(_parallel_build_trees)(
-                    t, self.rotation_matrices_[i], self, X, y, sample_weight, i, len(trees),
+                    t, self, X, y, sample_weight, i, len(trees),
                     verbose=self.verbose, class_weight=self.class_weight)
                 for i, t in enumerate(trees))
 
@@ -420,7 +395,7 @@ class ForestClassifier(six.with_metaclass(ABCMeta, BaseRotationForest,
     def __init__(self,
                  base_estimator,
                  n_estimators=10,
-                 n_subsets=5,
+                 n_features_per_subset=3,
                  estimator_params=tuple(),
                  bootstrap=False,
                  oob_score=False,
@@ -433,7 +408,7 @@ class ForestClassifier(six.with_metaclass(ABCMeta, BaseRotationForest,
         super(ForestClassifier, self).__init__(
             base_estimator,
             n_estimators=n_estimators,
-            n_subsets=n_subsets,
+            n_features_per_subset=n_features_per_subset,
             estimator_params=estimator_params,
             bootstrap=bootstrap,
             oob_score=oob_score,
@@ -680,7 +655,7 @@ class ForestRegressor(six.with_metaclass(ABCMeta, BaseRotationForest, RegressorM
     def __init__(self,
                  base_estimator,
                  n_estimators=10,
-                 n_subsets=5,
+                 n_features_per_subset=3,
                  estimator_params=tuple(),
                  bootstrap=False,
                  oob_score=False,
@@ -691,7 +666,7 @@ class ForestRegressor(six.with_metaclass(ABCMeta, BaseRotationForest, RegressorM
         super(ForestRegressor, self).__init__(
             base_estimator,
             n_estimators=n_estimators,
-            n_subsets=n_subsets,
+            n_features_per_subset=n_features_per_subset,
             estimator_params=estimator_params,
             bootstrap=bootstrap,
             oob_score=oob_score,
@@ -937,15 +912,15 @@ class RotationForestClassifier(ForestClassifier):
     """
     def __init__(self,
                  n_estimators=10,
-                 n_subsets=5,
+                 n_features_per_subset=3,
                  criterion="gini",
                  max_depth=None,
                  min_samples_split=2,
                  min_samples_leaf=1,
                  min_weight_fraction_leaf=0.,
-                 max_features="auto",
+                 max_features=None,
                  max_leaf_nodes=None,
-                 bootstrap=True,
+                 bootstrap=False,
                  oob_score=False,
                  n_jobs=1,
                  random_state=None,
@@ -955,7 +930,7 @@ class RotationForestClassifier(ForestClassifier):
         super(RotationForestClassifier, self).__init__(
             base_estimator=DecisionTreeClassifier(),
             n_estimators=n_estimators,
-            n_subsets=n_subsets,
+            n_features_per_subset=n_features_per_subset,
             estimator_params=("criterion", "max_depth", "min_samples_split",
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
@@ -998,7 +973,7 @@ class RandomForestRegressor(ForestRegressor):
         The function to measure the quality of a split. The only supported
         criterion is "mse" for the mean squared error.
 
-    max_features : int, float, string or None, optional (default="auto")
+    max_features : int, float, string or None, optional (default=None)
         The number of features to consider when looking for the best split:
 
         - If int, then consider `max_features` features at each split.
@@ -1102,13 +1077,13 @@ class RandomForestRegressor(ForestRegressor):
     """
     def __init__(self,
                  n_estimators=10,
-                 n_subsets=5,
+                 n_features_per_subset=3,
                  criterion="mse",
                  max_depth=None,
                  min_samples_split=2,
                  min_samples_leaf=1,
                  min_weight_fraction_leaf=0.,
-                 max_features="auto",
+                 max_features=None,
                  max_leaf_nodes=None,
                  bootstrap=True,
                  oob_score=False,
@@ -1119,7 +1094,7 @@ class RandomForestRegressor(ForestRegressor):
         super(RandomForestRegressor, self).__init__(
             base_estimator=DecisionTreeRegressor(),
             n_estimators=n_estimators,
-            n_subsets=n_subsets,
+            n_features_per_subset=n_features_per_subset,
             estimator_params=("criterion", "max_depth", "min_samples_split",
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
@@ -1161,7 +1136,7 @@ class RotationForestRegressor(ForestRegressor):
         The function to measure the quality of a split. The only supported
         criterion is "mse" for the mean squared error.
 
-    max_features : int, float, string or None, optional (default="auto")
+    max_features : int, float, string or None, optional (default=None)
         The number of features to consider when looking for the best split:
 
         - If int, then consider `max_features` features at each split.
@@ -1270,7 +1245,7 @@ class RotationForestRegressor(ForestRegressor):
                  min_samples_split=2,
                  min_samples_leaf=1,
                  min_weight_fraction_leaf=0.,
-                 max_features="auto",
+                 max_features=None,
                  max_leaf_nodes=None,
                  bootstrap=True,
                  oob_score=False,
