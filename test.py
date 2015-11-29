@@ -1,13 +1,16 @@
 import numpy as np
+import pandas as pd
 from sklearn.datasets import make_classification
-from rotation_forest import RotationForestClassifier
-from sklearn.ensemble import RandomForestClassifier
+from rotation_forest import RotationTreeClassifier, RotationForestClassifier
+from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import log_loss
 from sklearn.metrics import classification_report
 
 from sklearn.pipeline import make_pipeline
 from sklearn.decomposition import PCA
+
+from blue.preprocessing import binarize_ova
 
 def classification_data():
     n_features = 30
@@ -22,25 +25,50 @@ def classification_data():
     return X, y
 
 X, y = classification_data()
+#df = pd.read_csv('datasets/encoded_annealing.csv') # should make binary (3 and not 3. this is very unbalanced)
+#df['classes'] = np.where(df['classes'] == 2, 1, 0)
+#y = df.pop('classes').values
+#X = df.values
 xt,xv,yt,yv = train_test_split(X, y, test_size=.3, random_state=7)
 
 clf = RandomForestClassifier(random_state=12, n_estimators=25)
+print clf.__class__.__name__
 clf.fit(xt, yt)
 yhat = clf.predict(xv)
-print np.mean(yhat == yv), log_loss(yv, yhat)
-print classification_report(yv, yhat)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
 print ""
 
 clf = make_pipeline(PCA(), RandomForestClassifier(random_state=12, n_estimators=25))
+print clf.__class__.__name__
 clf.fit(xt, yt)
 yhat = clf.predict(xv)
-print np.mean(yhat == yv), log_loss(yv, yhat)
-print classification_report(yv, yhat)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
 print ""
 
-clf = RotationForestClassifier(random_state=12, n_estimators=25, n_features_per_subset=3, max_features=X.shape[1])
+clf = RotationTreeClassifier(random_state=12,  n_features_per_subset=3, max_features=X.shape[1])
+print clf.__class__.__name__
 clf.fit(xt,yt)
 yhat = clf.predict(xv)
-print np.mean(yhat == yv), log_loss(yv, yhat)
-print classification_report(yv, yhat)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
 print ""
+
+clf = RotationForestClassifier(random_state=12, n_estimators=25, n_features_per_subset=3)
+print clf.__class__.__name__
+clf.fit(xt,yt)
+yhat = clf.predict(xv)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
+print ""
+
+base = RotationTreeClassifier(n_features_per_subset=3, random_state=12)
+clf = BaggingClassifier(base, n_estimators=25, random_state=12)
+print clf.__class__.__name__
+clf.fit(xt,yt)
+yhat = clf.predict(xv)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
+print ""
+
