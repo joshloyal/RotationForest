@@ -78,5 +78,6 @@ classifiers = [('Random Forest',
 
 
 
-for name, clf in classifiers:
-    test_toy_data(name, clf)
+if __name__ == '__main__':
+    for name, clf in classifiers:
+        test_toy_data(name, clf)
