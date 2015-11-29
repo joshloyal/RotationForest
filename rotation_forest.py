@@ -5,15 +5,15 @@ from sklearn.tree._tree import DTYPE
 from sklearn.ensemble.forest import ForestClassifier
 from sklearn.utils import resample, gen_batches, check_random_state
 from sklearn.utils.extmath import fast_dot
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, RandomizedPCA
 
 from _exceptions import NotFittedError
 
 def random_feature_subsets(array, batch_size, random_state=1234):
     """ Generate K subsets of the features in X """
-    np.random.seed(random_state)
+    random_state = check_random_state(random_state)
     features = range(array.shape[1])
-    np.random.shuffle(features)
+    random_state.shuffle(features)
     for batch in gen_batches(len(features), batch_size):
         yield features[batch]
 
@@ -21,6 +21,7 @@ def random_feature_subsets(array, batch_size, random_state=1234):
 class RotationTreeClassifier(DecisionTreeClassifier):
     def __init__(self,
                  n_features_per_subset=3,
+                 rotation_algo='pca',
                  criterion="gini",
                  splitter="best",
                  max_depth=None,
@@ -34,6 +35,7 @@ class RotationTreeClassifier(DecisionTreeClassifier):
                  presort=False):
 
         self.n_features_per_subset = n_features_per_subset
+        self.rotation_algo = rotation_algo
 
         super(RotationTreeClassifier, self).__init__(
             criterion=criterion,
@@ -54,16 +56,28 @@ class RotationTreeClassifier(DecisionTreeClassifier):
 
         return fast_dot(X, self.rotation_matrix)
 
+    def pca_algorithm(self):
+        """ Deterimine PCA algorithm to use. """
+        if self.rotation_algo == 'randomized':
+            return RandomizedPCA(random_state=self.random_state)
+        elif self.rotation_algo == 'pca':
+            return PCA()
+        else:
+            raise ValueError("`rotation_algo` must be either "
+                             "'pca' or 'randomized'.")
+
     def _fit_rotation_matrix(self, X):
         random_state = check_random_state(self.random_state)
-
         n_samples, n_features = X.shape
         self.rotation_matrix = np.zeros((n_features, n_features),
                                         dtype=np.float32)
-        x_sample = resample(X, n_samples=int(n_samples*0.75),
-                            random_state=random_state)
-        for subset in random_feature_subsets(X, self.n_features_per_subset):
-            pca = PCA()
+        for i, subset in enumerate(
+                random_feature_subsets(X, self.n_features_per_subset,
+                                       random_state=self.random_state)):
+            # take a 75% bootstrap from the rows
+            x_sample = resample(X, n_samples=int(n_samples*0.75),
+                                random_state=10*i)
+            pca = self.pca_algorithm()
             pca.fit(x_sample[:, subset])
             self.rotation_matrix[np.ix_(subset, subset)] = pca.components_
 
@@ -93,6 +107,7 @@ class RotationForestClassifier(ForestClassifier):
                  n_estimators=10,
                  criterion="gini",
                  n_features_per_subset=3,
+                 rotation_algo='pca',
                  max_depth=None,
                  min_samples_split=2,
                  min_samples_leaf=1,
@@ -109,7 +124,7 @@ class RotationForestClassifier(ForestClassifier):
         super(RotationForestClassifier, self).__init__(
             base_estimator=RotationTreeClassifier(),
             n_estimators=n_estimators,
-            estimator_params=("n_features_per_subset",
+            estimator_params=("n_features_per_subset", "rotation_algo",
                               "criterion", "max_depth", "min_samples_split",
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
@@ -123,6 +138,7 @@ class RotationForestClassifier(ForestClassifier):
             class_weight=class_weight)
 
         self.n_features_per_subset = n_features_per_subset
+        self.rotation_algo = rotation_algo
         self.criterion = criterion
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split

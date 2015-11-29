@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.datasets import make_classification
 from rotation_forest import RotationTreeClassifier, RotationForestClassifier
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import log_loss
 from sklearn.metrics import classification_report
@@ -47,7 +49,7 @@ proba = clf.predict_proba(xv)
 print np.mean(yhat == yv), log_loss(yv, proba)
 print ""
 
-clf = RotationTreeClassifier(random_state=12,  n_features_per_subset=3, max_features=X.shape[1])
+clf = RotationTreeClassifier(random_state=12,  n_features_per_subset=3)
 print clf.__class__.__name__
 clf.fit(xt,yt)
 yhat = clf.predict(xv)
@@ -56,7 +58,15 @@ print np.mean(yhat == yv), log_loss(yv, proba)
 print ""
 
 clf = RotationForestClassifier(random_state=12, n_estimators=25, n_features_per_subset=3)
-print clf.__class__.__name__
+print clf.__class__.__name__ + " (PCA)"
+clf.fit(xt,yt)
+yhat = clf.predict(xv)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
+print ""
+
+clf = RotationForestClassifier(random_state=12, n_estimators=25, n_features_per_subset=3, rotation_algo='randomized')
+print clf.__class__.__name__ + " (RandomizedPCA)"
 clf.fit(xt,yt)
 yhat = clf.predict(xv)
 proba = clf.predict_proba(xv)
@@ -72,3 +82,20 @@ proba = clf.predict_proba(xv)
 print np.mean(yhat == yv), log_loss(yv, proba)
 print ""
 
+base = RotationTreeClassifier(n_features_per_subset=3, random_state=12, max_depth=3)
+clf = AdaBoostClassifier(base, n_estimators=25, random_state=12)
+print clf.__class__.__name__ + ' (RotationTree)'
+clf.fit(xt,yt)
+yhat = clf.predict(xv)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
+print ""
+
+base = DecisionTreeClassifier(random_state=12, max_depth=3)
+clf = AdaBoostClassifier(base, n_estimators=25, random_state=12)
+print clf.__class__.__name__ + ' (DecisionTree)'
+clf.fit(xt,yt)
+yhat = clf.predict(xv)
+proba = clf.predict_proba(xv)
+print np.mean(yhat == yv), log_loss(yv, proba)
+print ""
