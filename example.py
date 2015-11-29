@@ -24,7 +24,7 @@ def get_uci_path():
     return path
 
 
-def read_uci_dataset(base_dir, dataset_idx=1):
+def read_uci_dataset(path):
     """
     This function returns the path to the UCI dataset
 
@@ -42,8 +42,6 @@ def read_uci_dataset(base_dir, dataset_idx=1):
     #full_path = os.path.join(base_dir, 'uci-datasets')
 
     # Load the data
-    path = os.path.join(base_dir, str(dataset_idx) + '.data')
-
     data = np.genfromtxt(path, delimiter=",")
     rows, cols = data.shape
 
@@ -55,35 +53,17 @@ def read_uci_dataset(base_dir, dataset_idx=1):
 
 if __name__ == '__main__':
 
+    dataset_dir = './datasets/'
+    for dataset in os.listdir(dataset_dir):
+        name = dataset.split('.')[0]
 
-    datasets = [
-     'Balance'
-     'Breast-can'
-     'Diabetes',
-     'Ecoli',
-     'Iris',
-     'Liver',
-     'Sonar',
-     'Soybean',
-     'Spambase',
-      'Waveform',
-      'Wine',
-      'Digit',
-      'Hayes',
-      'Monk1',
-      'Monk2',
-      'Monk3']
-
-    for i, dataset in enumerate(datasets):
-
-        uci_path = get_uci_path()
-        X, Y = read_uci_dataset(uci_path,i+1)
+        X, Y = read_uci_dataset(dataset_dir+dataset)
 
         K = 10
         accuracy = []
         cv = StratifiedKFold(Y, K)
 
-        print dataset
+        print name
         for clf in [RotationForestClassifier(), RandomForestClassifier(n_estimators=10)]:
             for train, test in cv:
 
