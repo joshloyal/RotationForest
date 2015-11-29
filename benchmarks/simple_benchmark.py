@@ -5,8 +5,8 @@ from rotation_forest import RotationTreeClassifier, RotationForestClassifier
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.cross_validation import train_test_split
-from sklearn.metrics import roc_auc_score as auc
+from sklearn.cross_validation import StratifiedKFold
+from sklearn.metrics import roc_auc_score
 
 from sklearn.pipeline import make_pipeline
 from sklearn.decomposition import PCA
@@ -24,8 +24,26 @@ def classification_data():
 
     return X, y
 
-X, y = classification_data()
-xt,xv,yt,yv = train_test_split(X, y, test_size=.3, random_state=7)
+def test_toy_data(name, clf):
+    X, y = classification_data()
+    k_folds = 5
+    cv = StratifiedKFold(y, k_folds, random_state=1234)
+
+    acc, auc = [], []
+    for train, test in cv:
+        xt, xv, yt, yv = X[train, :], X[test, :], y[train], y[test]
+        clf.fit(xt, yt)
+        yhat = clf.predict(xv)
+        proba = clf.predict_proba(xv)[:, 1]
+        acc.append(np.mean(yhat == yv))
+        auc.append(roc_auc_score(yv, proba))
+
+    acc_mean, acc_std = np.mean(acc), np.std(acc)
+    auc_mean, auc_std = np.mean(auc), np.std(auc)
+    print name
+    print 'accuracy: {0:.3f} +/- {1:.3f}'.format(acc_mean, acc_std)
+    print 'auc: {0:.3f} +/- {1:.3f}'.format(auc_mean, auc_std)
+    print '-'*80
 
 classifiers = [('Random Forest',
                RandomForestClassifier(random_state=12, n_estimators=25)),
@@ -61,9 +79,4 @@ classifiers = [('Random Forest',
 
 
 for name, clf in classifiers:
-    print name
-    clf.fit(xt, yt)
-    yhat = clf.predict(xv)
-    proba = clf.predict_proba(xv)
-    print 'accuracy: {}\n'.format(np.mean(yhat == yv)),
-    print 'auc: {}\n'.format(auc(yv, proba[:, 1]))
+    test_toy_data(name, clf)
