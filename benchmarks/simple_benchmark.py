@@ -11,6 +11,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import make_pipeline
 from sklearn.decomposition import PCA
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def classification_data():
     n_features = 30
@@ -44,6 +46,11 @@ def test_toy_data(name, clf):
     print 'accuracy: {0:.3f} +/- {1:.3f}'.format(acc_mean, acc_std)
     print 'auc: {0:.3f} +/- {1:.3f}'.format(auc_mean, auc_std)
     print '-'*80
+    return {'name': name,
+            'acc_mean': acc_mean,
+            'acc_std': acc_std,
+            'auc_mean': auc_mean,
+            'auc_std': auc_std}
 
 classifiers = [('Random Forest',
                RandomForestClassifier(random_state=12, n_estimators=25)),
@@ -79,5 +86,14 @@ classifiers = [('Random Forest',
 
 
 if __name__ == '__main__':
+    results = []
     for name, clf in classifiers:
-        test_toy_data(name, clf)
+        results.append(test_toy_data(name, clf))
+    df = pd.DataFrame(results)
+    plt.figure(figsize=(10, 10))
+    sns.barplot(x='name', y='auc_mean', data=df.sort('auc_mean'),
+                xerr=df['auc_std'].values)
+    plt.xticks(rotation=30)
+    plt.xlabel('Classifier')
+    plt.ylabel('AUC')
+    plt.savefig('simple_benchmark.png')

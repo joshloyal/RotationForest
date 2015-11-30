@@ -18,3 +18,5 @@ Project the training dataset on the rotation matrix.
 Build a decision tree with the projected dataset
 
 Store the tree and the rotation matrix.
+
+![Toy data benchmark](benchmarks/simple_benchmark.png)
