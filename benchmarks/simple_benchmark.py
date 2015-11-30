@@ -92,10 +92,10 @@ if __name__ == '__main__':
     for name, clf in classifiers:
         results.append(test_toy_data(name, clf))
     df = pd.DataFrame(results)
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(15, 12))
     sns.barplot(x='name', y='auc_mean', data=df.sort('auc_mean'),
                 xerr=df['auc_std'].values)
-    plt.xticks(rotation=30)
+    plt.xticks(rotation=45)
     plt.xlabel('Classifier')
     plt.ylabel('AUC')
     plt.savefig('simple_benchmark.png')
