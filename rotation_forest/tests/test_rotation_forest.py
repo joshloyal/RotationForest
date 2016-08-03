@@ -32,9 +32,9 @@ class TestRotationTreeClassifier(object):
         clf.fit(xt, yt)
 
         proba = clf.predict_proba(xv)
-        self.assertEqual(proba.shape[0], xv.shape[0])
-        assert np.all(prob <= 1)
-        assert np.all(prob >= 0)
+        assert proba.shape[0] == xv.shape[0]
+        assert np.all(proba <= 1)
+        assert np.all(proba >= 0)
 
         yhat = clf.predict(xv)
         assert yhat.shape[0] == xv.shape[0]
@@ -72,7 +72,7 @@ class TestRotationTreeClassifier(object):
         X, y = classification_data(n_features=6)
         tree = RotationTreeClassifier(random_state=1234)
         tree.fit(X, y)
-        self.assertEqual(tree.rotation_matrix.shape, (6, 6))
+        assert tree.rotation_matrix.shape == (6, 6)
 
         # note that this random state generates the following subsets:
         subset1 = np.array([2, 1, 5])
@@ -88,7 +88,7 @@ class TestRotationTreeClassifier(object):
             assert np.any(tree.rotation_matrix[:, feature][subset2] != 0)
 
 
-class TestRotationForestClassifier(unittest.TestCase):
+class TestRotationForestClassifier(object):
     """ Test suite for RotationForestClassifier """
     def test_rotation_forest(self):
         """ Smoke test for rotation forest """
@@ -143,7 +143,7 @@ class TestRotationForestClassifier(unittest.TestCase):
             else:
                 clf_ws.set_params(n_estimators=n_estimators)
             clf_ws.fit(X, y)
-            self.assertEqual(len(clf_ws), n_estimators)
+            assert len(clf_ws) == n_estimators
 
         clf_no_ws = RotationForestClassifier(n_estimators=10,
                                              random_state=1234,
