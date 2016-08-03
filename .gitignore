@@ -1,1 +1,17 @@
 *.pyc
+*.so
+__pycache__
+*.info
+*.pred
+*.cache
+*.cpp
+build
+MANIFEST
+dist
+rgforest/rgfpackage/bin
+rgforest/rgfpackage/test
+*.tox
+*.coverage
+rgfpackage/bin/
+rgfpackage/test/
+htmlcov/

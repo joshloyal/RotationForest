@@ -1,4 +1,3 @@
-import unittest
 import pytest
 import copy
 
@@ -23,7 +22,7 @@ def classification_data(n_samples=500, n_features=30, redundant_size=0.1, inform
     return X, y
 
 
-class TestRotationTreeClassifier(unittest.TestCase):
+class TestRotationTreeClassifier(object):
     """ Test Suite for RotationTreeClassifier """
     def test_rotation_tree(self):
         """ Smoke test for rotation tree """
@@ -34,37 +33,39 @@ class TestRotationTreeClassifier(unittest.TestCase):
 
         proba = clf.predict_proba(xv)
         self.assertEqual(proba.shape[0], xv.shape[0])
-        self.assertTrue(np.all(proba <= 1))
-        self.assertTrue(np.all(proba >= 0))
+        assert np.all(prob <= 1)
+        assert np.all(prob >= 0)
 
         yhat = clf.predict(xv)
-        self.assertEqual(yhat.shape[0], xv.shape[0])
-        self.assertEqual(np.unique(yhat).tolist(), [0, 1])
+        assert yhat.shape[0] == xv.shape[0]
+        assert np.unique(yhat).tolist() == [0, 1]
 
     def test_random_feature_subsets(self):
         """ check we generate disjoint feature subsets that cover all features. """
         array = np.arange(6*6).reshape(6, 6)
         subsets = list(random_feature_subsets(array, batch_size=3))
-        self.assertEqual(len(subsets), 2)
+        assert len(subsets) == 2
         for subset in subsets:
-            self.assertTrue(set(subset).issubset(range(6)))
-        self.assertEqual(set(subsets[0]).intersection(set(subsets[1])), set())
+            assert set(subset).issubset(range(6))
+
+        assert set(subsets[0]).intersection(set(subsets[1])) == set()
 
     def test_random_feature_subsets_batch_size_not_even(self):
         array = np.arange(6*6).reshape(6, 6)
         subsets = list(random_feature_subsets(array, batch_size=5))
-        self.assertEqual(len(subsets), 2)
-        self.assertEqual(len(subsets[0]) + len(subsets[1]), 6)
+        assert len(subsets) == 2
+        assert (len(subsets[0]) + len(subsets[1])) == 6
         for subset in subsets:
-            self.assertTrue(set(subset).issubset(range(6)))
-        self.assertEqual(set(subsets[0]).intersection(set(subsets[1])), set())
+            assert set(subset).issubset(range(6))
+
+        assert set(subsets[0]).intersection(set(subsets[1])) == set()
 
     def test_random_feature_subsets_batch_size_too_big(self):
         """ request of a too large subset gives the full set """
         array = np.arange(6*6).reshape(6, 6)
         subsets = list(random_feature_subsets(array, batch_size=8))
-        self.assertEqual(len(subsets), 1)
-        self.assertEqual(sorted(subsets[0]), range(6))
+        assert len(subsets) == 1
+        assert sorted(subsets[0]) == range(6)
 
     def test_rotation_matrix(self):
         """ Smoke test for rotation forest """
@@ -79,12 +80,13 @@ class TestRotationTreeClassifier(unittest.TestCase):
 
         # make sure the loadings are input in the proper order
         for feature in subset1:
-            self.assertTrue(np.any(tree.rotation_matrix[:, feature][subset1] != 0))
-            self.assertTrue(np.any(tree.rotation_matrix[:, feature][subset2] == 0))
+            assert np.any(tree.rotation_matrix[:, feature][subset1] != 0)
+            assert np.any(tree.rotation_matrix[:, feature][subset2] == 0)
 
         for feature in subset2:
-            self.assertTrue(np.any(tree.rotation_matrix[:, feature][subset1] == 0))
-            self.assertTrue(np.any(tree.rotation_matrix[:, feature][subset2] != 0))
+            assert np.any(tree.rotation_matrix[:, feature][subset1] == 0)
+            assert np.any(tree.rotation_matrix[:, feature][subset2] != 0)
+
 
 class TestRotationForestClassifier(unittest.TestCase):
     """ Test suite for RotationForestClassifier """
@@ -96,13 +98,13 @@ class TestRotationForestClassifier(unittest.TestCase):
         clf.fit(xt, yt)
 
         proba = clf.predict_proba(xv)
-        self.assertEqual(proba.shape[0], xv.shape[0])
-        self.assertTrue(np.all(proba <= 1))
-        self.assertTrue(np.all(proba >= 0))
+        assert proba.shape[0] == xv.shape[0]
+        assert np.all(proba <= 1)
+        assert np.all(proba >= 0)
 
         yhat = clf.predict(xv)
-        self.assertEqual(yhat.shape[0], xv.shape[0])
-        self.assertEqual(np.unique(yhat).tolist(), [0, 1])
+        assert yhat.shape[0] == xv.shape[0]
+        assert np.unique(yhat).tolist() == [0, 1]
 
     def test_randomized_pca(self):
         """ smoke test for randomized pca """
@@ -112,13 +114,13 @@ class TestRotationForestClassifier(unittest.TestCase):
         clf.fit(xt, yt)
 
         proba = clf.predict_proba(xv)
-        self.assertEqual(proba.shape[0], xv.shape[0])
-        self.assertTrue(np.all(proba <= 1))
-        self.assertTrue(np.all(proba >= 0))
+        assert proba.shape[0] == xv.shape[0]
+        assert np.all(proba <= 1)
+        assert np.all(proba >= 0)
 
         yhat = clf.predict(xv)
-        self.assertEqual(yhat.shape[0], xv.shape[0])
-        self.assertEqual(np.unique(yhat).tolist(), [0, 1])
+        assert yhat.shape[0] == xv.shape[0]
+        assert np.unique(yhat).tolist() == [0, 1]
 
     def test_error_unkown_algo(self):
         """ Make sure we throw an error when selecting an unknown algorithm """
@@ -147,7 +149,6 @@ class TestRotationForestClassifier(unittest.TestCase):
                                              random_state=1234,
                                              warm_start=False)
         clf_no_ws.fit(X, y)
-        self.assertEqual(set([tree.random_state for tree in clf_ws]),
-                         set([tree.random_state for tree in clf_no_ws]))
+        assert set([tree.random_state for tree in clf_ws]) == set([tree.random_state for tree in clf_no_ws])
 
         npt.assert_array_equal(clf_ws.apply(X), clf_no_ws.apply(X))
