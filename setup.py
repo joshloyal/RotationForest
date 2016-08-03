@@ -1,6 +1,11 @@
 from setuptools import setup
 
 
+PACKAGES = [
+        'rotation_forest',
+        'rotation_forest.tests'
+]
+
 def setup_package():
     setup(
         name="rotation_forest",
@@ -10,6 +15,7 @@ def setup_package():
         url='https://github.com/joshloyal/RotationForest',
         license='MIT',
         install_requires=['numpy', 'scipy', 'scikit-learn'],
+        packages=PACKAGES,
     )
 
 
