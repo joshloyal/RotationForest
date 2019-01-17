@@ -4,10 +4,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree._tree import DTYPE
 from sklearn.ensemble.forest import ForestClassifier
 from sklearn.utils import resample, gen_batches, check_random_state
-from sklearn.utils.extmath import fast_dot
 from sklearn.decomposition import PCA
 
-from _exceptions import NotFittedError
 
 def random_feature_subsets(array, batch_size, random_state=1234):
     """ Generate K subsets of the features in X """
@@ -54,7 +52,7 @@ class RotationTreeClassifier(DecisionTreeClassifier):
         if not hasattr(self, 'rotation_matrix'):
             raise NotFittedError('The estimator has not been fitted')
 
-        return fast_dot(X, self.rotation_matrix)
+        return np.dot(X, self.rotation_matrix)
 
     def pca_algorithm(self):
         """ Deterimine PCA algorithm to use. """
