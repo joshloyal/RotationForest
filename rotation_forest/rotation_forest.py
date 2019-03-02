@@ -57,7 +57,7 @@ class RotationTreeClassifier(DecisionTreeClassifier):
     def pca_algorithm(self):
         """ Deterimine PCA algorithm to use. """
         if self.rotation_algo == 'randomized':
-            return PCA(svd_solver=randomized, random_state=self.random_state)
+            return PCA(svd_solver='randomized', random_state=self.random_state)
         elif self.rotation_algo == 'pca':
             return PCA()
         else:
