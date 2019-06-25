@@ -12,7 +12,7 @@ from _exceptions import NotFittedError
 def random_feature_subsets(array, batch_size, random_state=1234):
     """ Generate K subsets of the features in X """
     random_state = check_random_state(random_state)
-    features = range(array.shape[1])
+    features = list(range(array.shape[1]))
     random_state.shuffle(features)
     for batch in gen_batches(len(features), batch_size):
         yield features[batch]
