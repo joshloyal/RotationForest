@@ -5,7 +5,8 @@ from sklearn.tree._tree import DTYPE
 from sklearn.ensemble.forest import ForestClassifier
 from sklearn.utils import resample, gen_batches, check_random_state
 from sklearn.utils.extmath import fast_dot
-from sklearn.decomposition import PCA, RandomizedPCA
+from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA as RandomizedPCA
 
 from _exceptions import NotFittedError
 
@@ -59,7 +60,7 @@ class RotationTreeClassifier(DecisionTreeClassifier):
     def pca_algorithm(self):
         """ Deterimine PCA algorithm to use. """
         if self.rotation_algo == 'randomized':
-            return RandomizedPCA(random_state=self.random_state)
+            return RandomizedPCA(random_state=self.random_state, svd_solver='randomized')
         elif self.rotation_algo == 'pca':
             return PCA()
         else:
