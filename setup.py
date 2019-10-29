@@ -9,7 +9,7 @@ PACKAGES = [
 def setup_package():
     setup(
         name="rotation_forest",
-        version='0.2',
+        version='0.3',
         description='Sklearn style implementation of the Rotation Forest Algorithm',
         long_description='''
         Implementation of the Algorithm: J. J. Rodriguez, L. I. Kuncheva and C. J. Alonso, "Rotation Forest: A New Classifier Ensemble Method," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 28, no. 10, pp. 1619-1630, Oct. 2006.
