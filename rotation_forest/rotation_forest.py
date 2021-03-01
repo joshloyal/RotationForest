@@ -28,7 +28,7 @@ class RotationTreeClassifier(DecisionTreeClassifier):
                  random_state=None,
                  max_leaf_nodes=None,
                  class_weight=None,
-                 presort=False):
+    ):
 
         self.n_features_per_subset = n_features_per_subset
         self.rotation_algo = rotation_algo
@@ -44,7 +44,7 @@ class RotationTreeClassifier(DecisionTreeClassifier):
             max_leaf_nodes=max_leaf_nodes,
             class_weight=class_weight,
             random_state=random_state,
-            presort=presort)
+        )
 
     def rotate(self, X):
         if not hasattr(self, 'rotation_matrix'):
