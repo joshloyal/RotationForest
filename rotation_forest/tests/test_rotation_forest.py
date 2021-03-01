@@ -65,7 +65,7 @@ class TestRotationTreeClassifier(object):
         array = np.arange(6*6).reshape(6, 6)
         subsets = list(random_feature_subsets(array, batch_size=8))
         assert len(subsets) == 1
-        assert sorted(subsets[0]) == range(6)
+        assert sorted(subsets[0]) == list(range(6))
 
     def test_rotation_matrix(self):
         """ Smoke test for rotation forest """
