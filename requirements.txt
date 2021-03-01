@@ -31,4 +31,4 @@ scikit_learn ~= 0.24.1
 seaborn ~= 0.11.1
 
 # RotationForest/setup.py: 1
-setuptools ~= 49.6.0.post20210108
+# setuptools ~= 49.6.0.post20210108
