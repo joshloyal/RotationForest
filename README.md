@@ -1,5 +1,7 @@
 Rotation Forest
 ---
+[![Build Status](https://travis-ci.org/digital-idiot/RotationForest.svg?branch=master)](https://travis-ci.org/digital-idiot/RotationForest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+---
 Simple derived implementation of <b>Rotation Forest</b> algorithm<sup>[1, 2]</sup>  based upon sklearn's random forest module.
 
 
