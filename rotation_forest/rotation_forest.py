@@ -71,15 +71,13 @@ class RotationTreeClassifier(DecisionTreeClassifier):
         n_samples, n_features = X.shape
         self.rotation_matrix = np.zeros((n_features, n_features),
                                         dtype=np.float32)
-        for i, subset in enumerate(
-                random_feature_subsets(X, self.n_features_per_subset,
-                                       random_state=self.random_state)):
-            # take a 75% bootstrap from the rows
-            x_sample = resample(X, n_samples=int(n_samples*0.75),
-                                random_state=10*i)
-            pca = self.pca_algorithm()
-            pca.fit(x_sample[:, subset])
-            self.rotation_matrix[np.ix_(subset, subset)] = pca.components_
+        
+        subset = random_feature_subsets(X, self.n_features_per_subset, random_state=self.random_state)
+        # take a 75% bootstrap from the rows
+        x_sample = resample(X, n_samples=int(n_samples*0.75),random_state=10)
+        pca = self.pca_algorithm()
+        pca.fit(x_sample[:, subset])
+        self.rotation_matrix[np.ix_(subset, subset)] = pca.components_
 
     def fit(self, X, y, sample_weight=None, check_input=True):
         self._fit_rotation_matrix(X)
