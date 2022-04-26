@@ -78,7 +78,7 @@ class RotationTreeClassifier(DecisionTreeClassifier):
         x_sample = resample(X, n_samples=int(n_samples*0.75),random_state=10)
         pca = self.pca_algorithm()
         pca.fit(x_sample[:, subset])
-        self.rotation_matrix[np.ix_(subset, subset)] = pca.components_
+        self.rotation_matrix[np.ix_(subset, subset)] = pca.components_.T #The pca.components_ is the V that linalg.svd() returns and a row-vector,so it should be transposed
 
     def fit(self, X, y, sample_weight=None, check_input=True):
         self._fit_rotation_matrix(X)
