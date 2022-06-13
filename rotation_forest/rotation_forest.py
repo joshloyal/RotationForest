@@ -2,7 +2,7 @@ import numpy as np
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree._tree import DTYPE
-from sklearn.ensemble.forest import ForestClassifier
+from sklearn.ensemble._forest import ForestClassifier
 from sklearn.utils import resample, gen_batches, check_random_state
 from sklearn.utils.extmath import fast_dot
 from sklearn.decomposition import PCA, RandomizedPCA
@@ -12,7 +12,7 @@ from _exceptions import NotFittedError
 def random_feature_subsets(array, batch_size, random_state=1234):
     """ Generate K subsets of the features in X """
     random_state = check_random_state(random_state)
-    features = range(array.shape[1])
+    features = list(range(array.shape[1]))
     random_state.shuffle(features)
     for batch in gen_batches(len(features), batch_size):
         yield features[batch]
@@ -71,15 +71,14 @@ class RotationTreeClassifier(DecisionTreeClassifier):
         n_samples, n_features = X.shape
         self.rotation_matrix = np.zeros((n_features, n_features),
                                         dtype=np.float32)
-        for i, subset in enumerate(
-                random_feature_subsets(X, self.n_features_per_subset,
-                                       random_state=self.random_state)):
-            # take a 75% bootstrap from the rows
-            x_sample = resample(X, n_samples=int(n_samples*0.75),
-                                random_state=10*i)
-            pca = self.pca_algorithm()
-            pca.fit(x_sample[:, subset])
-            self.rotation_matrix[np.ix_(subset, subset)] = pca.components_
+        
+        random_feature=random_feature_subsets(X, self.n_features_per_subset,random_state=self.random_state)
+        subset=next(random_feature)
+        # take a 75% bootstrap from the rows
+        x_sample = resample(X, n_samples=int(n_samples*0.75),random_state=10)
+        pca = self.pca_algorithm()
+        pca.fit(x_sample[:, subset])
+        self.rotation_matrix[np.ix_(subset, subset)] = pca.components_.T #The pca.components_ is the V that linalg.svd() returns and a row-vector,so it should be transposed
 
     def fit(self, X, y, sample_weight=None, check_input=True):
         self._fit_rotation_matrix(X)
