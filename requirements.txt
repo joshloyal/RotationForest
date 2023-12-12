@@ -9,7 +9,7 @@ matplotlib ~= 3.3.4
 # RotationForest/benchmarks/simple_benchmark_regression.py: 2
 # RotationForest/rotation_forest/rotation_forest.py: 1
 # RotationForest/rotation_forest/tests/test_rotation_forest.py: 4,5
-numpy ~= 1.22
+numpy ~> 3.5.0
 
 # RotationForest/benchmarks/simple_benchmark.py: 2
 # RotationForest/benchmarks/simple_benchmark_regression.py: 3
