@@ -24,7 +24,7 @@ pytest ~= 6.2.2
 # RotationForest/rotation_forest/_exceptions.py: 19,21,81,83,85
 # RotationForest/rotation_forest/rotation_forest.py: 5
 # RotationForest/rotation_forest/tests/test_rotation_forest.py: 6,7
-scikit_learn ~= 0.24.1
+scikit_learn ~= 1.0.1
 
 # RotationForest/benchmarks/simple_benchmark.py: 15
 # RotationForest/benchmarks/simple_benchmark_regression.py: 4
