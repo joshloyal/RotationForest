@@ -1,12 +1,12 @@
 import pytest
-import copy
+#import copy
 
 import numpy as np
 import numpy.testing as npt
 from sklearn.datasets import make_classification
-from sklearn.cross_validation import train_test_split
-from ..rotation_forest import random_feature_subsets
-from ..rotation_forest import RotationTreeClassifier, RotationForestClassifier
+from sklearn.model_selection import train_test_split
+from rotation_forest import random_feature_subsets
+from rotation_forest import RotationTreeClassifier, RotationForestClassifier
 
 
 def classification_data(n_samples=500, n_features=30, redundant_size=0.1, informative_size=0.6, repeated_size=0.1):
@@ -65,7 +65,7 @@ class TestRotationTreeClassifier(object):
         array = np.arange(6*6).reshape(6, 6)
         subsets = list(random_feature_subsets(array, batch_size=8))
         assert len(subsets) == 1
-        assert sorted(subsets[0]) == range(6)
+        assert sorted(subsets[0]) == list(range(6))
 
     def test_rotation_matrix(self):
         """ Smoke test for rotation forest """

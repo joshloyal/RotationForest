@@ -15,3 +15,4 @@ rgforest/rgfpackage/test
 rgfpackage/bin/
 rgfpackage/test/
 htmlcov/
+.idea
